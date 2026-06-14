@@ -5,6 +5,7 @@ const Customer = require('../models/Customer');
 const Order = require('../models/Order');
 const Campaign = require('../models/Campaign');
 const Workspace = require('../models/Workspace');
+const User = require('../models/User');
 
 // Middleware to attach workspace
 const getWorkspace = async (req, res, next) => {
@@ -82,11 +83,14 @@ router.post('/chat', getWorkspace, async (req, res) => {
     const customers = await Customer.find({ workspaceId }).lean();
     const orders = await Order.find({ workspaceId }).lean();
     const campaigns = await Campaign.find({ workspaceId }).lean();
+    const user = await User.findById(req.user.id).lean();
 
     // Calculate aggregated statistics
     const totalCustomers = customers.length;
     const totalOrders = orders.length;
     const totalRevenue = orders.reduce((sum, o) => sum + (o.amount || 0), 0);
+    const totalCampaignRevenue = campaigns.reduce((sum, c) => sum + (c.revenue || 0), 0);
+    const totalCampaignConversions = campaigns.reduce((sum, c) => sum + (c.conversions || 0), 0);
     
     const cityCounts = {};
     const stateCounts = {};
@@ -118,10 +122,16 @@ router.post('/chat', getWorkspace, async (req, res) => {
       .reduce((obj, [k, v]) => ({ ...obj, [k]: v }), {});
 
     const dbContext = {
+      user_info: {
+        name: user ? user.name : 'Unknown User',
+        email: user ? user.email : 'Unknown Email'
+      },
       database_summary: {
         total_customers: totalCustomers,
         total_orders: totalOrders,
         total_revenue_inr: totalRevenue,
+        total_campaign_revenue_inr: totalCampaignRevenue,
+        total_campaign_conversions: totalCampaignConversions,
         average_order_value_inr: totalOrders > 0 ? (totalRevenue / totalOrders) : 0,
         top_cities_distribution: topCities,
         top_states_distribution: topStates,
@@ -140,7 +150,9 @@ router.post('/chat', getWorkspace, async (req, res) => {
       campaigns: campaigns.map(c => ({ 
         name: c.name, 
         status: c.status,
-        channel: c.channel
+        channel: c.channel,
+        revenue_inr: c.revenue || 0,
+        conversions: c.conversions || 0
       }))
     };
 
