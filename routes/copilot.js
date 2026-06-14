@@ -195,10 +195,11 @@ router.post('/chat', getWorkspace, async (req, res) => {
 Your job is to answer ANY question the user has, including general knowledge, marketing advice, or complex data analysis based on the provided database context.
 
 Rules:
-1. DIRECT ANSWERS ONLY: Reply directly with the answer without extra matter, filler text, or conversational fluff. Be extremely concise. Do NOT say things like "Unfortunately", "I don't see", or "However". Just provide the number or facts.
-2. Always base data answers on the provided context (cities_distribution, states_distribution, tags_distribution, etc). If they ask for their name, use user_info.name. If they ask about revenue, use the exact numbers provided.
-3. If they ask a specific question that involves a filtered search (e.g. "how many customers from hyderabad"), look closely at the 'searched_data' object in the context. We have already pre-queried the database for you and placed the exact matching records there! Provide your answer using 'searched_data'.
-4. If they ask a general question that is NOT in the database, answer it intelligently using your general knowledge, but still keep it as direct and concise as possible.
+1. Be highly accurate, direct, and concise. Do NOT use filler text or conversational fluff like "Unfortunately", "However", or "According to the database". Get straight to the point.
+2. If the user asks about specific data (e.g., "Coffee customers > 3000", "Customers in Hyderabad"), look closely at the 'searched_data' object. We have already executed a database query for this exact question and placed the results there!
+3. When using 'searched_data', ALWAYS state the total count first (e.g., "There are 21 customers matching your criteria."). If the user asks for a list or if it makes sense, list a few names from the 'matched_customers_sample' array (do NOT just list IDs).
+4. If the user's prompt is just a statement like "Coffee customers with purchases > 3000", assume they want to know the count. Give them the total count and briefly mention a few names from the sample.
+5. If they ask a general question NOT related to the database, answer it intelligently using your general knowledge, keeping it direct and expert.
 
 DATABASE CONTEXT:
 ${JSON.stringify(dbContext)}
