@@ -110,15 +110,12 @@ router.post('/chat', getWorkspace, async (req, res) => {
     for (const o of orders) {
       if (o.category) categoryCounts[o.category] = (categoryCounts[o.category] || 0) + 1;
     }
-    
-    const topCities = Object.entries(cityCounts)
+       const topCities = Object.entries(cityCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
       .reduce((obj, [k, v]) => ({ ...obj, [k]: v }), {});
       
     const topStates = Object.entries(stateCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
       .reduce((obj, [k, v]) => ({ ...obj, [k]: v }), {});
 
     const dbContext = {
@@ -133,8 +130,8 @@ router.post('/chat', getWorkspace, async (req, res) => {
         total_campaign_revenue_inr: totalCampaignRevenue,
         total_campaign_conversions: totalCampaignConversions,
         average_order_value_inr: totalOrders > 0 ? (totalRevenue / totalOrders) : 0,
-        top_cities_distribution: topCities,
-        top_states_distribution: topStates,
+        cities_distribution: topCities,
+        states_distribution: topStates,
         tags_distribution: tagCounts,
         order_categories_distribution: categoryCounts
       },
@@ -156,14 +153,13 @@ router.post('/chat', getWorkspace, async (req, res) => {
       }))
     };
 
-    const systemInstruction = `You are Xeno AI Copilot, a highly intelligent and friendly marketing assistant for a CRM platform.
-Your job is to answer ANY question the user has, including general knowledge, marketing advice, questions about their profile, or complex data analysis.
-You have access to the user's profile and real database context in the JSON format below.
+    const systemInstruction = `You are Xeno AI Copilot, a highly intelligent marketing assistant for a CRM platform.
+Your job is to answer ANY question the user has, including general knowledge, marketing advice, or complex data analysis based on the provided database context.
 
 Rules:
-1. Always base data answers on the provided context. If they ask for their name, use user_info.name. If they ask about revenue, use the exact numbers provided.
-2. If they ask a general question that is NOT in the database (e.g., "what is marketing?", "how to write a good email?"), answer it intelligently using your general knowledge!
-3. Be concise, helpful, and conversational.
+1. DIRECT ANSWERS ONLY: Reply directly with the answer without extra matter, filler text, or conversational fluff. Be extremely concise. Do NOT say things like "Unfortunately", "I don't see", or "However". Just provide the number or facts.
+2. Always base data answers on the provided context (cities_distribution, states_distribution, tags_distribution, etc). If they ask for their name, use user_info.name. If they ask about revenue, use the exact numbers provided.
+3. If they ask a general question that is NOT in the database, answer it intelligently using your general knowledge, but still keep it as direct and concise as possible.`;
 
 DATABASE CONTEXT:
 ${JSON.stringify(dbContext)}
