@@ -150,6 +150,13 @@ async function buildAudienceQuery(prompt) {
     
     The marketer wants to find specific customers. 
     Translate their prompt into a JSON array of rule objects. 
+    
+    CRITICAL RULES:
+    1. Words like "premium", "vip", "regular", "inactive", and "new customer" should ALWAYS be mapped to the 'tags' field using the '=' operator. Ensure the value is properly capitalized (e.g., "Premium", "VIP").
+    2. Spend amounts (e.g. "spent > 500") map to 'lifetime_value'.
+    3. Time since purchase (e.g. "in 60 days") maps to 'last_purchase_days_ago'.
+    4. Specific physical items or item categories (e.g., "coffee", "electronics") map to 'product_category' using 'contains'.
+    
     Example for "Customers who spent > 500 and haven't purchased in 60 days":
     [
       { "field": "lifetime_value", "operator": ">", "value": 500 },
