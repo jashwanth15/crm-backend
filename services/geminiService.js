@@ -40,7 +40,7 @@ async function generateAIResponse(prompt, systemInstruction = null) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama3-8b-8192',
         messages: messages,
         temperature: 0.1
       })
@@ -95,7 +95,7 @@ async function generateChatResponse(messages, systemInstruction) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama3-8b-8192',
         messages: messagesArray,
         temperature: 0.2,
         max_tokens: 1000

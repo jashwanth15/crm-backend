@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getModel, rotateKey, apiKeys, generateCustomerSummary, buildAudienceQuery, generateChatResponse } = require('../services/geminiService');
+const { getModel, rotateKey, apiKeys, generateCustomerSummary, buildAudienceQuery, generateChatResponse, fallbackRuleParser } = require('../services/geminiService');
 const Customer = require('../models/Customer');
 const Order = require('../models/Order');
 const Campaign = require('../models/Campaign');
