@@ -53,13 +53,13 @@ router.post('/campaign-complete', async (req, res) => {
       const clickedCount = await CommunicationLog.countDocuments({ campaign_id: campaignObj._id, status: 'CLICKED' });
       const sentCount = await CommunicationLog.countDocuments({ campaign_id: campaignObj._id, status: { $in: ['SENT', 'DELIVERED', 'OPENED', 'CLICKED', 'FAILED'] } });
       
-      // Random revenue: each click generates ₹500-₹2000 revenue, plus a base amount per sent message
-      const perClickRevenue = Math.floor(Math.random() * 1500) + 500; // ₹500 to ₹2000 per click
-      const baseRevenue = Math.floor(Math.random() * 200) * sentCount; // ₹0 to ₹200 per sent message 
-      const totalRevenue = (clickedCount * perClickRevenue) + baseRevenue;
+      // Random revenue: each conversion generates a reasonable AOV
       const conversions = clickedCount > 0 
-        ? Math.floor(clickedCount * (0.1 + Math.random() * 0.2)) // 10-30% of clicks convert
-        : (sentCount > 0 ? Math.floor(Math.random() * 2) : 0); // 0-1 conversions if no clicks
+        ? Math.max(1, Math.floor(clickedCount * (0.05 + Math.random() * 0.15))) // 5-20% of clicks convert
+        : (sentCount > 0 ? (Math.random() > 0.8 ? 1 : 0) : 0); // 20% chance of 1 conversion if no clicks
+      
+      const aov = Math.floor(Math.random() * 800) + 200; // ₹200 to ₹1000 per order
+      const totalRevenue = conversions * aov;
       
       campaignObj.status = 'Completed';
       campaignObj.revenue = totalRevenue;
