@@ -118,6 +118,43 @@ router.post('/chat', getWorkspace, async (req, res) => {
       .sort((a, b) => b[1] - a[1])
       .reduce((obj, [k, v]) => ({ ...obj, [k]: v }), {});
 
+    const userMessage = messages[messages.length - 1].content;
+    
+    // Attempt to pre-fetch specific customer/order data based on the user's query
+    let searchedData = null;
+    try {
+      const parsedRules = await fallbackRuleParser(userMessage);
+      if (parsedRules && parsedRules.length > 0) {
+        const { buildMongoQueryFromRules } = require('./audience');
+        const mongoQuery = await buildMongoQueryFromRules(parsedRules, workspaceId);
+        const matchingCustomers = await Customer.find(mongoQuery).lean();
+        
+        searchedData = {
+          matched_customers_count: matchingCustomers.length,
+          matched_customers_sample: matchingCustomers.slice(0, 15).map(c => ({
+            id: c._id, name: c.name, email: c.email, city: c.city, state: c.state, tags: c.tags
+          }))
+        };
+        
+        const catRule = parsedRules.find(r => r.field === 'product_category');
+        if (catRule) {
+          const cat = catRule.value;
+          const cIds = matchingCustomers.map(c => c._id);
+          const matchingOrders = await Order.find({
+            workspaceId,
+            customerId: { $in: cIds },
+            category: { $regex: new RegExp('^' + cat.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') }
+          }).lean();
+          searchedData.matched_orders_count = matchingOrders.length;
+          searchedData.matched_orders_sample = matchingOrders.slice(0, 15).map(o => ({
+            product: o.productName, amount: o.amount, category: o.category, customerId: o.customerId
+          }));
+        }
+      }
+    } catch (e) {
+      console.error('Error pre-fetching data:', e);
+    }
+
     const dbContext = {
       user_info: {
         name: user ? user.name : 'Unknown User',
@@ -135,6 +172,7 @@ router.post('/chat', getWorkspace, async (req, res) => {
         tags_distribution: tagCounts,
         order_categories_distribution: categoryCounts
       },
+      searched_data: searchedData,
       customer_schema_sample: customers.slice(0, 3).map(c => ({
         id: c._id,
         name: c.name,
@@ -159,7 +197,8 @@ Your job is to answer ANY question the user has, including general knowledge, ma
 Rules:
 1. DIRECT ANSWERS ONLY: Reply directly with the answer without extra matter, filler text, or conversational fluff. Be extremely concise. Do NOT say things like "Unfortunately", "I don't see", or "However". Just provide the number or facts.
 2. Always base data answers on the provided context (cities_distribution, states_distribution, tags_distribution, etc). If they ask for their name, use user_info.name. If they ask about revenue, use the exact numbers provided.
-3. If they ask a general question that is NOT in the database, answer it intelligently using your general knowledge, but still keep it as direct and concise as possible.`;
+3. If they ask a specific question that involves a filtered search (e.g. "how many customers from hyderabad"), look closely at the 'searched_data' object in the context. We have already pre-queried the database for you and placed the exact matching records there! Provide your answer using 'searched_data'.
+4. If they ask a general question that is NOT in the database, answer it intelligently using your general knowledge, but still keep it as direct and concise as possible.
 
 DATABASE CONTEXT:
 ${JSON.stringify(dbContext)}
@@ -214,76 +253,6 @@ Do not use markdown blocks for the JSON on the last line, just the raw JSON.`;
       }
     } catch (e) {
       // Ignore JSON parse errors
-    }
-
-    // Enrich response with live customer list if it's a customer query
-    const userMessage = messages[messages.length - 1].content;
-    const userMessageLower = userMessage.toLowerCase();
-    const isSearchQuery = userMessageLower.includes('show') || userMessageLower.includes('list') || userMessageLower.includes('find') || userMessageLower.includes('segment') || userMessageLower.includes('who bought') || userMessageLower.includes('who spent');
-    
-    if (isSearchQuery) {
-      try {
-        const parsedRules = await fallbackRuleParser(userMessage);
-        if (parsedRules && parsedRules.length > 0) {
-          const { buildMongoQueryFromRules } = require('./audience');
-          const mongoQuery = await buildMongoQueryFromRules(parsedRules, workspaceId);
-          const matchingCustomers = await Customer.find(mongoQuery).lean();
-          
-          if (matchingCustomers.length > 0) {
-            const catRule = parsedRules.find(r => r.field === 'product_category');
-            let extraContent = '';
-            
-            if (catRule) {
-              const cat = catRule.value;
-              const cIds = matchingCustomers.map(c => c._id);
-              const matchingOrders = await Order.find({
-                workspaceId,
-                customerId: { $in: cIds },
-                category: { $regex: new RegExp('^' + cat.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') }
-              }).lean();
-              
-              if (matchingOrders.length > 0) {
-                const grouped = {};
-                for (const order of matchingOrders) {
-                  const cIdStr = order.customerId.toString();
-                  if (!grouped[cIdStr]) {
-                    const custDoc = matchingCustomers.find(c => c._id.toString() === cIdStr);
-                    grouped[cIdStr] = {
-                      name: custDoc ? custDoc.name : 'Unknown',
-                      email: custDoc ? custDoc.email : '',
-                      city: custDoc ? custDoc.city : '',
-                      orders: []
-                    };
-                  }
-                  grouped[cIdStr].orders.push(order);
-                }
-                
-                extraContent = `\n\nI queried the database and found **${matchingOrders.length}** matching ${cat.charAt(0).toUpperCase() + cat.slice(1)} orders:\n`;
-                for (const key in grouped) {
-                  const info = grouped[key];
-                  extraContent += `* **${info.name}** (${info.email}) - ${info.city || ''}\n`;
-                  extraContent += `  * Orders: ${info.orders.map(o => `${o.productName} (₹${o.amount})`).join(', ')}\n`;
-                }
-              }
-            }
-            
-            if (!extraContent) {
-              extraContent = `\n\nI queried the database and found **${matchingCustomers.length}** matching customers:\n\n`;
-              for (const c of matchingCustomers.slice(0, 10)) {
-                extraContent += `* **${c.name}** (${c.email}) - ${c.city || c.state || 'Unknown'}\n`;
-              }
-              if (matchingCustomers.length > 10) {
-                extraContent += `\n*...and ${matchingCustomers.length - 10} more.*`;
-              }
-            }
-            
-            content += extraContent;
-            action = { label: "Go to Audience Builder", route: "create-audience-ai" };
-          }
-        }
-      } catch (err) {
-        console.error('Failed to enrich customer search query:', err);
-      }
     }
 
     res.json({ content, action });
