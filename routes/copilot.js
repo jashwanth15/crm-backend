@@ -272,55 +272,6 @@ Do not use markdown blocks for the JSON on the last line, just the raw JSON.`;
         });
       }
 
-      // Offline help & guide responder
-      if (lower.includes('campaign') || lower.includes('objective') || lower.includes('message')) {
-        return res.json({
-          content: "To create and launch a campaign:\n\n1. Click on **Campaigns** in the sidebar or click the **Create Campaign** quick action on the dashboard.\n2. Click the **Create Campaign** button in the top right.\n3. Enter the campaign details (Name, Objective, Audience, Channel, Message body).\n4. Click **Launch Campaign** to send it immediately via the simulator, or **Save Draft** to edit it later.\n\nWould you like me to take you to the campaign creator?",
-          action: { label: "Create Campaign", route: "create-campaign" }
-        });
-      }
-      if (lower.includes('audience') || lower.includes('segment') || lower.includes('rule') || lower.includes('builder')) {
-        return res.json({
-          content: "To build a customer audience segment:\n\n1. Click on **Audiences** in the sidebar.\n2. You can use the **Manual Builder** to define rules (like city, total spend, tags) OR use the **AI Builder** to describe your audience in plain English.\n3. Click **Preview Audience** to see matching customers.\n4. Enter a name and click **Save Audience**.\n\nWould you like me to take you to the Audience Builder?",
-          action: { label: "Go to Audience Builder", route: "create-audience-ai" }
-        });
-      }
-      if (lower.includes('customer') || lower.includes('people') || lower.includes('user')) {
-        return res.json({
-          content: "To view or manage your customers:\n\n1. Click on **Customers** in the sidebar to see the customer database.\n2. You can search, filter, and view individual customer profiles (timeline, spent stats, campaigns received, etc.).\n3. To add a new customer, click the **Add Customer** button on the customers page.\n\nWould you like me to take you to the Customers list?",
-          action: { label: "Go to Customers", route: "customers" }
-        });
-      }
-      if (lower.includes('analytics') || lower.includes('report') || lower.includes('stats') || lower.includes('revenue') || lower.includes('chart') || lower.includes('graph')) {
-        return res.json({
-          content: "To view your performance metrics and reports:\n\n1. Open the **Analytics** view from the sidebar.\n2. You can check the Revenue Overview chart, average order value, conversion rates, and performance across channels (Email, WhatsApp, SMS, RCS).\n3. Use the date range filter in the top right to analyze specific timeframes.\n\nWould you like me to take you to the Analytics Dashboard?",
-          action: { label: "Go to Analytics", route: "analytics" }
-        });
-      }
-      if (lower.includes('setting') || lower.includes('profile') || lower.includes('theme') || lower.includes('dark') || lower.includes('light')) {
-        if (lower.includes('how') || lower.includes('where') || lower.includes('change') || lower.includes('edit')) {
-          return res.json({
-            content: "To manage your account settings or change themes:\n\n1. Click on the **Settings** icon at the bottom of the sidebar.\n2. You can update your business name, notification preferences, or switch between Light and Dark themes.\n\nWould you like me to take you to Settings?",
-            action: { label: "Go to Settings", route: "settings" }
-          });
-        }
-      }
-      if (lower.includes('order') || lower.includes('purchase') || lower.includes('product') || lower.includes('buy') || lower.includes('bought')) {
-        if (lower.includes('how') || lower.includes('where') || lower.includes('create') || lower.includes('add') || lower.includes('view') || lower.includes('track')) {
-          return res.json({
-            content: "To view and manage your orders:\n\n1. Click on **Orders** in the sidebar.\n2. You can search orders by product name, category, status, date, or customer details.\n3. Use the **Add Order** action to record new orders.\n\nWould you like me to take you to the Orders list?",
-            action: { label: "Go to Orders", route: "orders" }
-          });
-        }
-      }
-      // General question fallback
-      const isQuestion = lower.includes('how') || lower.includes('what') || lower.includes('can') || lower.includes('why') || lower.includes('help') || lower.includes('explain') || lower.includes('guide');
-      if (isQuestion) {
-        return res.json({
-          content: "I am currently running in offline fallback mode because my AI brain reached its API limit! 😅\n\nHowever, I can guide you through the CRM platform's features. Please ask me about:\n* **How to create a campaign**\n* **How to build an audience**\n* **How to search customers or orders**\n* **How to view analytics or change settings**\n\nOr click below to head straight to the Audience Builder!",
-          action: { label: "Go to Audience Builder", route: "create-audience-ai" }
-        });
-      }
 
       // Check if it is a delete/remove query
       const isDeleteQuery = lower.includes('delete') || lower.includes('remove') || lower.includes('clear');
@@ -415,7 +366,62 @@ Do not use markdown blocks for the JSON on the last line, just the raw JSON.`;
             content: reply,
             action: { label: "Go to Audience Builder", route: "create-audience-ai" }
           });
+        } else {
+          return res.json({
+            content: "I searched the database but found **0 customers** matching your criteria.",
+            action: { label: "Go to Audience Builder", route: "create-audience-ai" }
+          });
         }
+      }
+
+      // Offline help & guide responder
+      if (lower.includes('campaign') || lower.includes('objective') || lower.includes('message')) {
+        return res.json({
+          content: "To create and launch a campaign:\n\n1. Click on **Campaigns** in the sidebar or click the **Create Campaign** quick action on the dashboard.\n2. Click the **Create Campaign** button in the top right.\n3. Enter the campaign details (Name, Objective, Audience, Channel, Message body).\n4. Click **Launch Campaign** to send it immediately via the simulator, or **Save Draft** to edit it later.\n\nWould you like me to take you to the campaign creator?",
+          action: { label: "Create Campaign", route: "create-campaign" }
+        });
+      }
+      if (lower.includes('audience') || lower.includes('segment') || lower.includes('rule') || lower.includes('builder')) {
+        return res.json({
+          content: "To build a customer audience segment:\n\n1. Click on **Audiences** in the sidebar.\n2. You can use the **Manual Builder** to define rules (like city, total spend, tags) OR use the **AI Builder** to describe your audience in plain English.\n3. Click **Preview Audience** to see matching customers.\n4. Enter a name and click **Save Audience**.\n\nWould you like me to take you to the Audience Builder?",
+          action: { label: "Go to Audience Builder", route: "create-audience-ai" }
+        });
+      }
+      if (lower.includes('customer') || lower.includes('people') || lower.includes('user')) {
+        return res.json({
+          content: "To view or manage your customers:\n\n1. Click on **Customers** in the sidebar to see the customer database.\n2. You can search, filter, and view individual customer profiles (timeline, spent stats, campaigns received, etc.).\n3. To add a new customer, click the **Add Customer** button on the customers page.\n\nWould you like me to take you to the Customers list?",
+          action: { label: "Go to Customers", route: "customers" }
+        });
+      }
+      if (lower.includes('analytics') || lower.includes('report') || lower.includes('stats') || lower.includes('revenue') || lower.includes('chart') || lower.includes('graph')) {
+        return res.json({
+          content: "To view your performance metrics and reports:\n\n1. Open the **Analytics** view from the sidebar.\n2. You can check the Revenue Overview chart, average order value, conversion rates, and performance across channels (Email, WhatsApp, SMS, RCS).\n3. Use the date range filter in the top right to analyze specific timeframes.\n\nWould you like me to take you to the Analytics Dashboard?",
+          action: { label: "Go to Analytics", route: "analytics" }
+        });
+      }
+      if (lower.includes('setting') || lower.includes('profile') || lower.includes('theme') || lower.includes('dark') || lower.includes('light')) {
+        if (lower.includes('how') || lower.includes('where') || lower.includes('change') || lower.includes('edit')) {
+          return res.json({
+            content: "To manage your account settings or change themes:\n\n1. Click on the **Settings** icon at the bottom of the sidebar.\n2. You can update your business name, notification preferences, or switch between Light and Dark themes.\n\nWould you like me to take you to Settings?",
+            action: { label: "Go to Settings", route: "settings" }
+          });
+        }
+      }
+      if (lower.includes('order') || lower.includes('purchase') || lower.includes('product') || lower.includes('buy') || lower.includes('bought')) {
+        if (lower.includes('how') || lower.includes('where') || lower.includes('create') || lower.includes('add') || lower.includes('view') || lower.includes('track')) {
+          return res.json({
+            content: "To view and manage your orders:\n\n1. Click on **Orders** in the sidebar.\n2. You can search orders by product name, category, status, date, or customer details.\n3. Use the **Add Order** action to record new orders.\n\nWould you like me to take you to the Orders list?",
+            action: { label: "Go to Orders", route: "orders" }
+          });
+        }
+      }
+      // General question fallback
+      const isQuestion = lower.includes('how') || lower.includes('what') || lower.includes('can') || lower.includes('why') || lower.includes('help') || lower.includes('explain') || lower.includes('guide');
+      if (isQuestion) {
+        return res.json({
+          content: "I am currently running in offline fallback mode because my AI brain reached its API limit! 😅\n\nHowever, I can guide you through the CRM platform's features. Please ask me about:\n* **How to create a campaign**\n* **How to build an audience**\n* **How to search customers or orders**\n* **How to view analytics or change settings**\n\nOr click below to head straight to the Audience Builder!",
+          action: { label: "Go to Audience Builder", route: "create-audience-ai" }
+        });
       }
 
       // Secondary fallback (original regex logic)
