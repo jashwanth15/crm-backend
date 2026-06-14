@@ -27,6 +27,7 @@ app.use('/api/communications', verifyToken, require('./routes/communications'));
 app.use('/api/analytics', verifyToken, require('./routes/analytics'));
 app.use('/api/copilot', verifyToken, require('./routes/copilot'));
 app.use('/api/notifications', verifyToken, require('./routes/notifications'));
+app.use('/api/simulator', require('./routes/simulator'));
 
 // Webhooks don't need auth
 app.use('/api/receipts', require('./routes/receipts'));

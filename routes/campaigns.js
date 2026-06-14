@@ -237,7 +237,7 @@ async function launchCampaign(campaign, workspaceId) {
     const insertedComms = await CommunicationLog.insertMany(commsToInsert);
 
     const payload = insertedComms.map(c => ({ id: c._id }));
-    const simulatorUrl = process.env.SIMULATOR_URL || 'http://localhost:3001';
+    const simulatorUrl = process.env.SIMULATOR_URL || `http://localhost:${process.env.PORT || 3000}/api/simulator`;
     
     fetch(`${simulatorUrl}/send`, {
       method: 'POST',
