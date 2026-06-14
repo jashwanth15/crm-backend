@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getModel, rotateKey, apiKeys, generateCustomerSummary, fallbackRuleParser, generateChatResponse } = require('../services/geminiService');
+const { getModel, rotateKey, apiKeys, generateCustomerSummary, buildAudienceQuery, generateChatResponse } = require('../services/geminiService');
 const Customer = require('../models/Customer');
 const Order = require('../models/Order');
 const Campaign = require('../models/Campaign');
@@ -123,7 +123,7 @@ router.post('/chat', getWorkspace, async (req, res) => {
     // Attempt to pre-fetch specific customer/order data based on the user's query
     let searchedData = null;
     try {
-      const parsedRules = await fallbackRuleParser(userMessage);
+      const parsedRules = await buildAudienceQuery(userMessage);
       if (parsedRules && parsedRules.length > 0) {
         const { buildMongoQueryFromRules } = require('./audience');
         const mongoQuery = await buildMongoQueryFromRules(parsedRules, workspaceId);
